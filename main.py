@@ -4,12 +4,12 @@ import traceback
 from sys import excepthook
 
 from PyQt6 import uic
-from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt6.QtCore import QPropertyAnimation, QPoint
 from PyQt6.uic import loadUi
 
 
-class Authorization(QWidget): # 920x562
+class AuthorizationWindow(QWidget): # 920x562
     def __init__(self):
         super().__init__()
         self.loadUi()
@@ -39,26 +39,58 @@ class Authorization(QWidget): # 920x562
         animation_login_frame.start()
 
     def register(self):
-        self.connect_db()
-
         name = self.nameRegEdit.text()
         surname = self.surnameRegEdit.text()
         patronymic = self.patronymicRegEdit.text()
         passport_details = self.passportDetailsRegEdit.text()
         age = self.ageRegEdit.text()
 
-        sql = '''INSERT INTO users(name, surname, patronymic, passport_details, age)
-                 VALUES (?, ?, ?, ?, ?)'''
-        self.cursor.execute(sql, (name, surname, patronymic, passport_details, age))
-        self.connect.commit()
-        self.connect.close()
+        if self.check_data(name, surname, patronymic, passport_details, age, who_called_check="registerFunc"):
+            self.connect_db()
+
+            sql = '''INSERT INTO users(name, surname, patronymic, passport_details, age)
+                     VALUES (?, ?, ?, ?, ?);'''
+            self.cursor.execute(sql, (name, surname, patronymic, passport_details, age))
+            self.connect.commit()
+            self.connect.close()
 
     def log_in(self):
-        print("login")
+        name = self.userNameEdit.text()
+        surname = self.userSurnameEdit.text()
+        passport_details = self.passportDetailsEdit.text()
+        if self.check_data(name, surname, passport_details, who_called_check="loginFunc"):
+            self.connect_db()
+            sql = '''SELECT user_id
+                     FROM users
+                     WHERE name = ? AND surname = ? AND passport_details = ?'''
+            self.cursor.execute(sql, (name, surname, passport_details)).fetchall()
+            self.connect.close()
+            print("Заебись")
+        else:
+            self.passportDetailsEdit.setPlaceholderText("Вы неверно ввели паспортные данные")
+            # Прописать что будет выводиться при неправильных данных
+
+    def check_data(self, *kwargs, who_called_check):
+        if who_called_check == "loginFunc":
+            passport_details = kwargs[2]
+            if len(passport_details) != 11:
+                return False
+            if passport_details.index(" ") != 4:
+                return False
+            return True
 
     def connect_db(self):
         self.connect = sqlite3.connect("Bank")
         self.cursor = self.connect.cursor()
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('registrationWindow.ui', self)
 
 def excepthook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
@@ -68,6 +100,6 @@ def excepthook(exc_type, exc_value, exc_tb):
 if __name__ == '__main__':
     sys.excepthook = excepthook
     app = QApplication(sys.argv)
-    ex = Authorization()
+    ex = AuthorizationWindow()
     ex.show()
     sys.exit(app.exec())
