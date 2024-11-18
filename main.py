@@ -6,17 +6,19 @@ from sys import excepthook
 
 from PyQt6 import uic
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow
-from PyQt6.QtCore import QPropertyAnimation, QPoint, QTimer
+from PyQt6.QtCore import QPropertyAnimation, QPoint, QTimer, Qt
 from PyQt6.uic import loadUi
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, name):
         super().__init__()
+        self.name = name
         self.loadUi()
 
     def loadUi(self):
-        uic.loadUi('registrationWindow.ui', self)
+        uic.loadUi('mainWindow.ui', self)
+        self.welcomeLabel.setText(f"Здравствуйте, {self.name}!")
 
 
 class AuthorizationWindow(QWidget): # 920x562
@@ -77,8 +79,10 @@ class AuthorizationWindow(QWidget): # 920x562
                      FROM users
                      WHERE name = ? AND surname = ? AND passport_details = ?'''
             if self.cursor.execute(sql, (name, surname, passport_details)).fetchall():
-                # Прописать создание экземпляра класса, открывающего основное окно приложения + Прописать функцию "запомнить меня"
                 self.connect.close()
+                self.close()
+                self.ex = MainWindow(name)
+                self.ex.show()
             else:
                 self.errorLabel.setText("Аккаунта с такими данными не существует")
                 self.timer_error_text(self.errorLabel)
@@ -123,13 +127,85 @@ class AuthorizationWindow(QWidget): # 920x562
         self.timer.start(3000)
 
 
-class DevicePasswordWindow(QWidget):
+class DevicePasswordWindow(QWidget): # 301x238
     def __init__(self):
         super().__init__()
         self.loadUi()
 
     def loadUi(self):
         uic.loadUi("passwordDevice.ui", self)
+
+        with open("userInformation/passwordDivice", encoding="utf-8") as file:
+            password = file.read().strip()
+            if not password == "":
+                self.label.setText("Введите пин-код")
+            else:
+                self.label.setText("Придумайте пин-код")
+
+        self.oneButton.clicked.connect(self.pass_input)
+        self.twoButton.clicked.connect(self.pass_input)
+        self.threeButton.clicked.connect(self.pass_input)
+        self.fourButton.clicked.connect(self.pass_input)
+        self.fiveButton.clicked.connect(self.pass_input)
+        self.sixButton.clicked.connect(self.pass_input)
+        self.sevenButton.clicked.connect(self.pass_input)
+        self.eightButton.clicked.connect(self.pass_input)
+        self.nineButton.clicked.connect(self.pass_input)
+        self.zeroButton.clicked.connect(self.pass_input)
+        self.deleteButton.clicked.connect(self.delete_symbol)
+        self.enterButton.clicked.connect(self.check_password)
+
+    def pass_input(self):
+        start_meaning = self.passwordEdit.text()
+        new_meaning = self.sender().text()
+        self.passwordEdit.setText(f"{start_meaning}{new_meaning}")
+
+    def delete_symbol(self):
+        text = self.passwordEdit.text()[:-1]
+        self.passwordEdit.setText(text)
+
+    def check_password(self):
+        with open("userInformation/passwordDivice", "r+", encoding="utf-8") as file:
+            password = file.read().strip()
+            if not password == "":
+                if password == self.passwordEdit.text():
+                    self.close() # Закрытие текущего окна
+                    self.ex = AuthorizationWindow()
+                    self.ex.show()
+                else:
+                    self.passwordEdit.setText("")
+            else:
+                file.write(self.passwordEdit.text())
+                self.close()
+                self.ex = AuthorizationWindow()
+                self.ex.show()
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == Qt.Key.Key_1:
+            self.oneButton.click()
+        elif key == Qt.Key.Key_2:
+            self.twoButton.click()
+        elif key == Qt.Key.Key_3:
+            self.threeButton.click()
+        elif key == Qt.Key.Key_4:
+            self.fourButton.click()
+        elif key == Qt.Key.Key_5:
+            self.fiveButton.click()
+        elif key == Qt.Key.Key_6:
+            self.sixButton.click()
+        elif key == Qt.Key.Key_7:
+            self.sevenButton.click()
+        elif key == Qt.Key.Key_8:
+            self.eightButton.click()
+        elif key == Qt.Key.Key_9:
+            self.nineButton.click()
+        elif key == Qt.Key.Key_0:
+            self.zeroButton.click()
+        elif key == Qt.Key.Key_Backspace:
+            self.deleteButton.click()
+        elif key == Qt.Key.Key_Return:
+            self.check_password()
 
 
 def excepthook(exc_type, exc_value, exc_tb):
