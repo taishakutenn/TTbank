@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
             QFrame {
                 background-color: rgb(43, 45, 48);
             }
-            QLabel {
+            QLabel, QPushButton {
                 color: rgb(225,225,225);
             }''')
             config_writer.write("dark")
@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
             QFrame {
                 background-color: rgb(253,217,181);
             }   
-            QLabel {
+            QLabel, QPushButton {
                 color: rgb(0,0,0);
             }''')
             config_writer.write("light")
@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
                             QFrame {
                                 background-color: rgb(43, 45, 48);
                             }
-                            QLabel {
+                            QLabel, QPushButton{
                                 color: rgb(225,225,225);
                             }''')
             else:
@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
                             QFrame {
                                 background-color: rgb(253,217,181);
                             }   
-                            QLabel {
+                            QLabel, QPushButton {
                                 color: rgb(0,0,0);
                              }''')
 
