@@ -2,6 +2,7 @@ import sys
 import sqlite3
 import traceback
 from dbm import error
+from idlelib.iomenu import encoding
 from sys import excepthook
 
 from PyQt6 import uic
@@ -16,6 +17,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.name = name
         self.loadUi()
+        self.load_config()
 
     def loadUi(self):
         uic.loadUi('mainWindow.ui', self)
@@ -28,16 +30,50 @@ class MainWindow(QMainWindow):
         self.blackThemeButton.clicked.connect(self.changed_color)
         self.whiteThemeButton.clicked.connect(self.changed_color)
 
-    def changed_color(self):
+    def changed_color(self): # Функция изменения цвета программы
+        config_writer = open("userInformation/config", "w", encoding="utf-8")
         sender = self.sender()
         if sender == self.blackThemeButton:
             self.backgroundFrame.setStyleSheet('''
             QFrame {
-                background-color: black;
+                background-color: rgb(43, 45, 48);
             }
-            ''')
+            QLabel {
+                color: rgb(225,225,225);
+            }''')
+            config_writer.write("dark")
         else:
-            print("Светлая")
+            self.backgroundFrame.setStyleSheet('''
+            QFrame {
+                background-color: rgb(253,217,181);
+            }   
+            QLabel {
+                color: rgb(0,0,0);
+            }''')
+            config_writer.write("light")
+        config_writer.close()
+
+    def load_config(self):
+        # Прописываем получение и утсановление цвета, который пользователь выбрал перед выходом из программы
+        with open("userInformation/config", "r", encoding="utf-8") as f:
+            background_theme = f.read().strip()
+            if background_theme == "dark":
+                self.backgroundFrame.setStyleSheet('''
+                            QFrame {
+                                background-color: rgb(43, 45, 48);
+                            }
+                            QLabel {
+                                color: rgb(225,225,225);
+                            }''')
+            else:
+                self.backgroundFrame.setStyleSheet('''
+                            QFrame {
+                                background-color: rgb(253,217,181);
+                            }   
+                            QLabel {
+                                color: rgb(0,0,0);
+                             }''')
+
 
 class AuthorizationWindow(QWidget): # 920x562
     def __init__(self):
