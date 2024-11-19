@@ -7,6 +7,7 @@ from sys import excepthook
 from PyQt6 import uic
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt6.QtCore import QPropertyAnimation, QPoint, QTimer, Qt
+from PyQt6.QtGui import QScreen
 from PyQt6.uic import loadUi
 
 
@@ -18,8 +19,25 @@ class MainWindow(QMainWindow):
 
     def loadUi(self):
         uic.loadUi('mainWindow.ui', self)
-        self.welcomeLabel.setText(f"Здравствуйте, {self.name}!")
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.geometry()
 
+        self.welcomLabel.setText(f"Здравствуйте, {self.name}!")
+        self.move((screen_geometry.width() - self.width() // 1) // 2, (screen_geometry.height() - 20 - self.height() // 1) // 2)
+
+        self.blackThemeButton.clicked.connect(self.changed_color)
+        self.whiteThemeButton.clicked.connect(self.changed_color)
+
+    def changed_color(self):
+        sender = self.sender()
+        if sender == self.blackThemeButton:
+            self.backgroundFrame.setStyleSheet('''
+            QFrame {
+                background-color: black;
+            }
+            ''')
+        else:
+            print("Светлая")
 
 class AuthorizationWindow(QWidget): # 920x562
     def __init__(self):
@@ -134,7 +152,6 @@ class DevicePasswordWindow(QWidget): # 301x238
 
     def loadUi(self):
         uic.loadUi("passwordDevice.ui", self)
-
         with open("userInformation/passwordDivice", encoding="utf-8") as file:
             password = file.read().strip()
             if not password == "":
@@ -216,6 +233,6 @@ def excepthook(exc_type, exc_value, exc_tb):
 if __name__ == '__main__':
     sys.excepthook = excepthook
     app = QApplication(sys.argv)
-    ex = DevicePasswordWindow()
+    ex = MainWindow("Артём")
     ex.show()
     sys.exit(app.exec())
