@@ -13,11 +13,13 @@ from PyQt6.uic import loadUi
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, name):
+    def __init__(self, name, user_id):
         super().__init__()
+        self.user_id = user_id
         self.name = name
         self.loadUi()
         self.load_config()
+
 
     def loadUi(self):
         uic.loadUi('mainWindow.ui', self)
@@ -27,6 +29,24 @@ class MainWindow(QMainWindow):
         self.welcomLabel.setText(f"Здравствуйте, {self.name}!")
         self.move((screen_geometry.width() - self.width() // 1) // 2, (screen_geometry.height() - 20 - self.height() // 1) // 2)
 
+        # Прописываем отображение информации о счетах пользователя, если они у него есть
+        self.connect_db()
+        sql = '''SELECT account_name, balance, currency FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        if response:
+            self.nameAccOneLabel.setText(response[0][0])
+            self.nameAccTwoLabel.setText(response[1][0])
+
+            self.balanceOneLabel.setText(f"Баланс: {response[0][1]} {response[0][2]}")
+            self.balanceTwoLabel.setText(f"Баланс: {response[1][1]} {response[0][2]}")
+        self.connect.close()
+
+        self.createNewAccountButton.clicked.connect(self.create_new_account)
+        self.checkAccountsButton.clicked.connect(self.check_all_accounts)
+        self.editAccountButton.clicked.connect(self.edit_account)
+        self.transferFundsButton.clicked.connect(self.transfer_funds)
+        self.exchangeCurrencyButton.clicked.connect(self.exchange_currency)
+        self.checkHistoryButton.clicked.connect(self.check_history)
         self.blackThemeButton.clicked.connect(self.changed_color)
         self.whiteThemeButton.clicked.connect(self.changed_color)
 
@@ -73,6 +93,68 @@ class MainWindow(QMainWindow):
                             QLabel, QPushButton {
                                 color: rgb(0,0,0);
                              }''')
+
+    def create_new_account(self):
+        pass
+
+    def check_all_accounts(self):
+        pass
+
+    def edit_account(self):
+        self.app = EditAccount()
+        self.app.show()
+
+    def transfer_funds(self):
+        self.app = Transfer()
+        self.app.show()
+
+    def exchange_currency(self):
+        self.app = ChangeCurrency()
+        self.app.show()
+
+    def check_history(self):
+        self.app = CheckHistory()
+        self.app.show()
+
+    def connect_db(self):
+        self.connect = sqlite3.connect("Bank")
+        self.cursor = self.connect.cursor()
+
+
+class Transfer(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('transfer.ui', self)
+
+
+class ChangeCurrency(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('changeCurrency.ui', self)
+
+
+class EditAccount(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('editAccount.ui', self)
+
+
+class CheckHistory(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('checkHistory.ui', self)
 
 
 class AuthorizationWindow(QWidget): # 920x562
@@ -132,10 +214,11 @@ class AuthorizationWindow(QWidget): # 920x562
             sql = '''SELECT user_id
                      FROM users
                      WHERE name = ? AND surname = ? AND passport_details = ?'''
-            if self.cursor.execute(sql, (name, surname, passport_details)).fetchall():
+            response = self.cursor.execute(sql, (name, surname, passport_details)).fetchall()
+            if response:
                 self.connect.close()
                 self.close()
-                self.ex = MainWindow(name)
+                self.ex = MainWindow(name, response)
                 self.ex.show()
             else:
                 self.errorLabel.setText("Аккаунта с такими данными не существует")
@@ -269,6 +352,6 @@ def excepthook(exc_type, exc_value, exc_tb):
 if __name__ == '__main__':
     sys.excepthook = excepthook
     app = QApplication(sys.argv)
-    ex = MainWindow("Артём")
+    ex = AuthorizationWindow()
     ex.show()
     sys.exit(app.exec())

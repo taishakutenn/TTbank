@@ -175,7 +175,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="nameAccOneLabel">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -193,7 +193,7 @@
         <string>Имя счёта</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_5">
+      <widget class="QLabel" name="balanceOneLabel">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -227,7 +227,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <widget class="QLabel" name="label_4">
+      <widget class="QLabel" name="nameAccTwoLabel">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -245,7 +245,7 @@
         <string>Имя счёта</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_6">
+      <widget class="QLabel" name="balanceTwoLabel">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -264,7 +264,7 @@
        </property>
       </widget>
      </widget>
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QPushButton" name="createNewAccountButton">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -282,7 +282,7 @@
        <string>Открыть новый счёт</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_2">
+     <widget class="QPushButton" name="checkAccountsButton">
       <property name="geometry">
        <rect>
         <x>300</x>
@@ -319,7 +319,7 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QPushButton" name="pushButton_3">
+     <widget class="QPushButton" name="exchangeCurrencyButton">
       <property name="geometry">
        <rect>
         <x>80</x>
@@ -332,7 +332,7 @@
        <string>Обменять валюту</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_4">
+     <widget class="QPushButton" name="editAccountButton">
       <property name="geometry">
        <rect>
         <x>80</x>
@@ -345,7 +345,7 @@
        <string>Редактировать счёт</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_9">
+     <widget class="QPushButton" name="transferFundsButton">
       <property name="geometry">
        <rect>
         <x>80</x>
@@ -363,7 +363,7 @@
        <string>Перевести средства</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_7">
+     <widget class="QPushButton" name="checkHistoryButton">
       <property name="geometry">
        <rect>
         <x>80</x>
