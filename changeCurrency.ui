@@ -95,7 +95,7 @@
     <pixmap>images/logo.svg</pixmap>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="changeButton">
    <property name="geometry">
     <rect>
      <x>50</x>

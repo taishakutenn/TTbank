@@ -2,6 +2,7 @@ import sys
 import sqlite3
 import traceback
 from dbm import error
+from distutils.command.check import check
 from idlelib.iomenu import encoding
 from sys import excepthook
 
@@ -105,7 +106,12 @@ class MainWindow(QMainWindow):
         self.app.show()
 
     def transfer_funds(self):
-        self.app = Transfer()
+        self.connect_db()
+        sql = '''SELECT account_name FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        self.connect.close()
+
+        self.app = Transfer(response, int(self.user_id[0][0]))
         self.app.show()
 
     def exchange_currency(self):
@@ -122,12 +128,106 @@ class MainWindow(QMainWindow):
 
 
 class Transfer(QWidget):
-    def __init__(self):
+    def __init__(self, response, user_id):
         super().__init__()
+        self.response = response
+        self.user_id = user_id
         self.loadUi()
 
     def loadUi(self):
         uic.loadUi('transfer.ui', self)
+        self.transferMoneyButton.clicked.connect(self.transfer_money)
+
+        for value in self.response:
+            self.accountsBox.addItem(value[0])
+
+    def transfer_money(self):
+        transfer_summ = self.transferSummEdit.text()
+        number = self.numberRecipientEdit.text()
+        if self.check(number):
+            if transfer_summ and int(transfer_summ) > 0:
+                current_account = self.accountsBox.currentText()
+                self.connect_db()
+                sql = '''SELECT balance FROM accounts WHERE account_name = ?;'''
+                on_balance = self.cursor.execute(sql, (current_account,)).fetchall()
+                if int(on_balance[0][0]) > int(transfer_summ):
+                    sql = '''UPDATE accounts
+                             SET balance = balance - ?
+                             WHERE account_name = ?;'''
+                    self.cursor.execute(sql, (int(transfer_summ), current_account))
+                    self.connect.commit()
+                    sql = '''UPDATE accounts
+                             SET balance = balance + ?
+                             WHERE account_id = (
+                             SELECT MIN(account_id)
+                             FROM accounts
+                             WHERE user_id = (SELECT user_id FROM users WHERE phone_number = ?))'''
+                    self.cursor.execute(sql, (int(transfer_summ), number))
+                    self.connect.commit()
+                    self.connect.close()
+                else:
+                    self.errorLabel.setText("На счёте не хватает сдердств")
+                    self.timer_error_text(self.errorLabel)
+                    self.transferSummEdit.setText("")
+            else:
+                self.errorLabel.setText("Вы не ввели сумму перевода")
+                self.timer_error_text(self.errorLabel)
+                self.transferSummEdit.setText("")
+        else:
+            self.errorLabel.setText("Номер телефона введён неверно")
+            self.timer_error_text(self.errorLabel)
+            self.numberRecipientEdit.setText("")
+
+
+    def check(self, number):
+        number = "".join(number.split())
+        if not number.startswith("+7") and not number.startswith("8"):
+            return False
+        if "--" in number:
+            return False
+        if number.endswith("-"):
+            return False
+        number = number.replace("-", "")
+
+        brackets_left = number.find("(")
+        brackets_right = number.find(")")
+
+        if brackets_left > -1:
+            if brackets_right < brackets_left:
+                return False
+            if number.count("(") != 1 or number.count(")") != 1:
+                return False
+        else:
+            if brackets_right > -1:
+                return False
+
+        number = number.replace("(", "").replace(")", "")
+
+        if number[0] == "8" and number[0]:
+            number = "+7" + number[1:]
+        if len(number) != 12:
+            return False
+        if not number[1:].isdigit():
+            return False
+
+        sql = '''SELECT user_id FROM users WHERE phone_number = ?'''
+        self.connect_db()
+        res = self.cursor.execute(sql, (number, )).fetchall()
+        if not res:
+            return False
+
+        self.connect.close()
+        return True
+
+    def timer_error_text(self, widget):
+        self.timer = QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(lambda: widget.clear())
+        self.timer.start(3000)
+
+    def connect_db(self):
+        self.connect = sqlite3.connect("Bank")
+        self.cursor = self.connect.cursor()
 
 
 class ChangeCurrency(QWidget):
@@ -193,11 +293,12 @@ class AuthorizationWindow(QWidget): # 920x562
         patronymic = self.patronymicRegEdit.text()
         passport_details = self.passportDetailsRegEdit.text()
         age = self.ageRegEdit.text()
+        phone_number = self.registrationFrame.text()
         if self.check_data(name, surname, patronymic, passport_details, age, who_called_check="registerFunc"):
             self.connect_db()
-            sql = '''INSERT INTO users(name, surname, patronymic, passport_details, age)
-                     VALUES (?, ?, ?, ?, ?);'''
-            self.cursor.execute(sql, (name, surname, patronymic, passport_details, age))
+            sql = '''INSERT INTO users(name, surname, patronymic, passport_details, age, phone_number)
+                     VALUES (?, ?, ?, ?, ?, ?);'''
+            self.cursor.execute(sql, (name, surname, patronymic, passport_details, age, phone_number))
             self.open_login_frame()
             self.connect.commit()
             self.connect.close()

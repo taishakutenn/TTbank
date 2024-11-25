@@ -50,6 +50,9 @@
      <height>20</height>
     </rect>
    </property>
+   <property name="inputMask">
+    <string/>
+   </property>
   </widget>
   <widget class="QLabel" name="label_2">
    <property name="geometry">
@@ -85,7 +88,7 @@
     <pixmap>images/logo.svg</pixmap>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="transferMoneyButton">
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -124,6 +127,22 @@
      <width>241</width>
      <height>20</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="errorLabel">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>70</y>
+     <width>241</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="text">
+    <string/>
    </property>
   </widget>
  </widget>
