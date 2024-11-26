@@ -50,6 +50,7 @@ class MainWindow(QMainWindow):
         self.checkHistoryButton.clicked.connect(self.check_history)
         self.blackThemeButton.clicked.connect(self.changed_color)
         self.whiteThemeButton.clicked.connect(self.changed_color)
+        self.leaveAccountButton.clicked.connect(self.leave_account)
 
     def changed_color(self): # Функция изменения цвета программы
         config_writer = open("userInformation/config", "w", encoding="utf-8")
@@ -99,10 +100,21 @@ class MainWindow(QMainWindow):
         pass
 
     def check_all_accounts(self):
-        pass
+        self.connect_db()
+        sql = '''SELECT account_name, balance, currency FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        self.connect.close()
+
+        self.app = AllAccounts(response)
+        self.app.show()
 
     def edit_account(self):
-        self.app = EditAccount()
+        self.connect_db()
+        sql = '''SELECT account_name FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        self.connect.close()
+
+        self.app = EditAccount(response)
         self.app.show()
 
     def transfer_funds(self):
@@ -115,16 +127,44 @@ class MainWindow(QMainWindow):
         self.app.show()
 
     def exchange_currency(self):
-        self.app = ChangeCurrency()
+        self.connect_db()
+        sql = '''SELECT account_name FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        self.connect.close()
+
+        self.app = ChangeCurrency(response)
         self.app.show()
 
     def check_history(self):
         self.app = CheckHistory()
         self.app.show()
 
+    def leave_account(self):
+        with open("userInformation/rememberMe.txt", "w", encoding="utf-8") as file:
+            pass
+
+        self.close()
+        self.app = AuthorizationWindow()
+        self.app.show()
+
     def connect_db(self):
         self.connect = sqlite3.connect("Bank")
         self.cursor = self.connect.cursor()
+
+
+class AllAccounts(QWidget):
+    def __init__(self, response):
+        super().__init__()
+        self.response = response
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('allAccounts.ui', self)
+        if len(self.response) > 0:
+            for item in self.response:
+                self.allAccountsList.addItem(f"Название: {item[0]}\nБаланс: {item[1]} {item[2]}\n")
+        else:
+            self.allAccountsList.addItem(f"На данный момент у вас нет ни одного аккаунта")
 
 
 class Transfer(QWidget):
@@ -165,6 +205,7 @@ class Transfer(QWidget):
                     self.cursor.execute(sql, (int(transfer_summ), number))
                     self.connect.commit()
                     self.connect.close()
+                    self.close()
                 else:
                     self.errorLabel.setText("На счёте не хватает сдердств")
                     self.timer_error_text(self.errorLabel)
@@ -217,6 +258,7 @@ class Transfer(QWidget):
             return False
 
         self.connect.close()
+
         return True
 
     def timer_error_text(self, widget):
@@ -231,21 +273,73 @@ class Transfer(QWidget):
 
 
 class ChangeCurrency(QWidget):
-    def __init__(self):
+    def __init__(self, response):
         super().__init__()
+        self.response = response
         self.loadUi()
 
     def loadUi(self):
         uic.loadUi('changeCurrency.ui', self)
+        self.changeButton.clicked.connect(self.change_currency)
+
+        for value in self.response:
+            self.accountsBox.addItem(value[0])
+
+    def change_currency(self):
+        current_account = self.accountsBox.currentText()
+        current_currency = self.currencyBox.currentText()
+        sql = '''UPDATE accounts SET currency = ?, balance = balance / ? WHERE account_name = ?'''
+        self.connect_db()
+        if current_currency == "Долар":
+            self.cursor.execute(sql, ("Дол", 100, current_account))
+        elif current_currency == "Евро":
+            self.cursor.execute(sql, ("Евро", 130, current_account))
+        self.connect.commit()
+        self.connect.close()
+        self.close()
+
+    def connect_db(self):
+        self.connect = sqlite3.connect("Bank")
+        self.cursor = self.connect.cursor()
 
 
 class EditAccount(QWidget):
-    def __init__(self):
+    def __init__(self, response):
         super().__init__()
+        self.response = response
         self.loadUi()
+        self.current_account = self.accountsBox.currentText()
 
     def loadUi(self):
         uic.loadUi('editAccount.ui', self)
+
+        self.deleteAccount.clicked.connect(self.delete_account)
+        self.confirmChangeButton.clicked.connect(self.edit)
+
+        for value in self.response:
+            self.accountsBox.addItem(value[0])
+
+    def delete_account(self):
+        sql = '''DELETE from accounts WHERE account_name = ?'''
+        self.connect_db()
+        self.cursor.execute(sql, (self.current_account, ))
+        self.connect.commit()
+        self.connect.close()
+        self.close()
+
+    def edit(self):
+        new_account_name = self.nameAccountEdit.text()
+        if len(new_account_name) > 0:
+            sql = '''UPDATE accounts SET account_name = ? WHERE account_name = ?'''
+            self.connect_db()
+            self.cursor.execute(sql, (new_account_name, self.current_account))
+            self.connect.commit()
+            self.connect.close()
+            self.close()
+
+    def connect_db(self):
+        self.connect = sqlite3.connect("Bank")
+        self.cursor = self.connect.cursor()
 
 
 class CheckHistory(QWidget):
@@ -317,6 +411,10 @@ class AuthorizationWindow(QWidget): # 920x562
                      WHERE name = ? AND surname = ? AND passport_details = ?'''
             response = self.cursor.execute(sql, (name, surname, passport_details)).fetchall()
             if response:
+                if self.rememberMeBox.isChecked(): # Если выбрано "запомнить меня" в файл записываем данные для входа
+                    with open("userInformation/rememberMe.txt", "w", encoding="utf-8") as file:
+                        file.write(f"{name}\n{surname}\n{passport_details}")
+
                 self.connect.close()
                 self.close()
                 self.ex = MainWindow(name, response)
@@ -406,9 +504,22 @@ class DevicePasswordWindow(QWidget): # 301x238
             password = file.read().strip()
             if not password == "":
                 if password == self.passwordEdit.text():
-                    self.close() # Закрытие текущего окна
-                    self.ex = AuthorizationWindow()
-                    self.ex.show()
+                    file = open("userInformation/rememberMe.txt", "r", encoding="utf-8")
+                    data = file.read().split("\n")
+                    if len(data) == 3:
+                        self.connect_db()
+                        sql = '''SELECT user_id
+                                         FROM users
+                                         WHERE name = ? AND surname = ? AND passport_details = ?'''
+                        response = self.cursor.execute(sql, (data[0], data[1], data[2])).fetchall()
+                        self.connect.close()
+
+                        self.app = MainWindow(data[0], response)
+                        self.app.show()
+                    else:
+                        self.ex = AuthorizationWindow()
+                        self.ex.show()
+                    self.close()  # Закрытие текущего окна
                 else:
                     self.passwordEdit.setText("")
             else:
@@ -444,6 +555,10 @@ class DevicePasswordWindow(QWidget): # 301x238
         elif key == Qt.Key.Key_Return:
             self.check_password()
 
+    def connect_db(self):
+        self.connect = sqlite3.connect("Bank")
+        self.cursor = self.connect.cursor()
+
 
 def excepthook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
@@ -453,6 +568,6 @@ def excepthook(exc_type, exc_value, exc_tb):
 if __name__ == '__main__':
     sys.excepthook = excepthook
     app = QApplication(sys.argv)
-    ex = AuthorizationWindow()
+    ex = DevicePasswordWindow()
     ex.show()
     sys.exit(app.exec())

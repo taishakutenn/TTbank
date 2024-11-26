@@ -41,7 +41,7 @@
     <string>Выберите счёт</string>
    </property>
   </widget>
-  <widget class="QComboBox" name="accountsBox_2">
+  <widget class="QComboBox" name="currencyBox">
    <property name="geometry">
     <rect>
      <x>20</x>

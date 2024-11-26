@@ -427,17 +427,17 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QLabel" name="label_7">
+     <widget class="QPushButton" name="leaveAccountButton">
       <property name="geometry">
        <rect>
         <x>80</x>
-        <y>20</y>
-        <width>211</width>
-        <height>41</height>
+        <y>10</y>
+        <width>221</width>
+        <height>51</height>
        </rect>
       </property>
       <property name="text">
-       <string>Аватарка</string>
+       <string>Выйти с аккаунта</string>
       </property>
      </widget>
     </widget>
