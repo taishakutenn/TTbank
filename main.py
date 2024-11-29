@@ -4,7 +4,6 @@ import traceback
 import datetime
 from dbm import error
 from distutils.command.check import check
-from idlelib.iomenu import encoding
 from sys import excepthook
 
 from PyQt6 import uic
@@ -44,7 +43,7 @@ class MainWindow(QMainWindow):
         self.loadPageButton.clicked.connect(self.load_page)
 
     def changed_color(self): # Функция изменения цвета программы
-        config_writer = open("userInformation/config", "w", encoding="utf-8")
+        config_writer = open("dist/userInformation/config", "w", encoding="utf-8")
         sender = self.sender()
         if sender == self.blackThemeButton:
             self.backgroundFrame.setStyleSheet('''
@@ -72,7 +71,7 @@ class MainWindow(QMainWindow):
 
     def load_config(self):
         # Прописываем получение и утсановление цвета, который пользователь выбрал перед выходом из программы
-        with open("userInformation/config", "r", encoding="utf-8") as f:
+        with open("dist/userInformation/config", "r", encoding="utf-8") as f:
             background_theme = f.read().strip()
             if background_theme == "dark":
                 self.backgroundFrame.setStyleSheet('''
@@ -174,7 +173,7 @@ class MainWindow(QMainWindow):
         self.app.show()
 
     def leave_account(self):
-        with open("userInformation/rememberMe.txt", "w", encoding="utf-8") as file:
+        with open("dist/userInformation/rememberMe.txt", "w", encoding="utf-8") as file:
             pass
 
         self.close()
@@ -182,7 +181,7 @@ class MainWindow(QMainWindow):
         self.app.show()
 
     def connect_db(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
 
 
@@ -325,7 +324,7 @@ class Transfer(QWidget):
         self.timer.start(3000)
 
     def connect_db(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
 
 
@@ -356,7 +355,7 @@ class ChangeCurrency(QWidget):
         self.close()
 
     def connect_db(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
 
 
@@ -408,7 +407,7 @@ class EditAccount(QWidget):
             self.close()
 
     def connect_db(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
 
 
@@ -427,7 +426,7 @@ class CheckHistory(QWidget):
             self.accountsBox.addItem(value[0])
 
     def check_history(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
         current_account = self.accountsBox.currentText()
 
@@ -455,7 +454,7 @@ class CreateNewAcc(QWidget):
     def create_new_account(self):
         account_name = self.nameNewAccEdit.text()
         if account_name and not account_name.isdigit():
-            connect = sqlite3.connect("Bank")
+            connect = sqlite3.connect("dist/bank")
             cursor = connect.cursor()
             sql = '''INSERT INTO accounts(account_name, user_id, balance, currency)
                      VALUES(?, ?, 0, "Руб")'''
@@ -528,7 +527,7 @@ class AuthorizationWindow(QWidget): # 920x562
             response = self.cursor.execute(sql, (name, surname, passport_details)).fetchall()
             if response:
                 if self.rememberMeBox.isChecked(): # Если выбрано "запомнить меня" в файл записываем данные для входа
-                    with open("userInformation/rememberMe.txt", "w", encoding="utf-8") as file:
+                    with open("dist/userInformation/rememberMe.txt", "w", encoding="utf-8") as file:
                         file.write(f"{name}\n{surname}\n{passport_details}")
 
                 self.connect.close()
@@ -569,7 +568,7 @@ class AuthorizationWindow(QWidget): # 920x562
             return True
 
     def connect_db(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
 
     def timer_error_text(self, widget):
@@ -586,7 +585,7 @@ class DevicePasswordWindow(QWidget): # 301x238
 
     def loadUi(self):
         uic.loadUi("passwordDevice.ui", self)
-        with open("userInformation/passwordDivice", encoding="utf-8") as file:
+        with open("dist/userInformation/passwordDivice", encoding="utf-8") as file:
             password = file.read().strip()
             if not password == "":
                 self.label.setText("Введите пин-код")
@@ -616,11 +615,11 @@ class DevicePasswordWindow(QWidget): # 301x238
         self.passwordEdit.setText(text)
 
     def check_password(self):
-        with open("userInformation/passwordDivice", "r+", encoding="utf-8") as file:
+        with open("dist/userInformation/passwordDivice", "r+", encoding="utf-8") as file:
             password = file.read().strip()
             if not password == "":
                 if password == self.passwordEdit.text():
-                    file = open("userInformation/rememberMe.txt", "r", encoding="utf-8")
+                    file = open("dist/userInformation/rememberMe.txt", "r", encoding="utf-8")
                     data = file.read().split("\n")
                     if len(data) == 3:
                         self.connect_db()
@@ -672,7 +671,7 @@ class DevicePasswordWindow(QWidget): # 301x238
             self.check_password()
 
     def connect_db(self):
-        self.connect = sqlite3.connect("Bank")
+        self.connect = sqlite3.connect("dist/bank")
         self.cursor = self.connect.cursor()
 
 
