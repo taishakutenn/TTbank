@@ -7,11 +7,17 @@
     <x>0</x>
     <y>0</y>
     <width>282</width>
-    <height>329</height>
+    <height>453</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QPushButton{
+	border: 1px solid black;
+	border-radius: 10px;
+}</string>
   </property>
   <widget class="QComboBox" name="accountsBox">
    <property name="geometry">
@@ -50,6 +56,14 @@
      <height>23</height>
     </rect>
    </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">:hover {
+    background-color: rgb(204, 102, 255);
+}</string>
+   </property>
    <property name="text">
     <string>Посмотреть</string>
    </property>
@@ -58,7 +72,7 @@
    <property name="geometry">
     <rect>
      <x>90</x>
-     <y>250</y>
+     <y>390</y>
      <width>101</width>
      <height>61</height>
     </rect>
@@ -68,6 +82,16 @@
    </property>
    <property name="pixmap">
     <pixmap>images/logo.svg</pixmap>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="HistoryList">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>90</y>
+     <width>261</width>
+     <height>291</height>
+    </rect>
    </property>
   </widget>
  </widget>

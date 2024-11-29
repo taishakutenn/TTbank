@@ -1,6 +1,7 @@
 import sys
 import sqlite3
 import traceback
+import datetime
 from dbm import error
 from distutils.command.check import check
 from idlelib.iomenu import encoding
@@ -29,18 +30,7 @@ class MainWindow(QMainWindow):
 
         self.welcomLabel.setText(f"Здравствуйте, {self.name}!")
         self.move((screen_geometry.width() - self.width() // 1) // 2, (screen_geometry.height() - 20 - self.height() // 1) // 2)
-
-        # Прописываем отображение информации о счетах пользователя, если они у него есть
-        self.connect_db()
-        sql = '''SELECT account_name, balance, currency FROM accounts WHERE user_id = ?'''
-        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
-        if response:
-            self.nameAccOneLabel.setText(response[0][0])
-            self.nameAccTwoLabel.setText(response[1][0])
-
-            self.balanceOneLabel.setText(f"Баланс: {response[0][1]} {response[0][2]}")
-            self.balanceTwoLabel.setText(f"Баланс: {response[1][1]} {response[0][2]}")
-        self.connect.close()
+        self.load_page()
 
         self.createNewAccountButton.clicked.connect(self.create_new_account)
         self.checkAccountsButton.clicked.connect(self.check_all_accounts)
@@ -51,6 +41,7 @@ class MainWindow(QMainWindow):
         self.blackThemeButton.clicked.connect(self.changed_color)
         self.whiteThemeButton.clicked.connect(self.changed_color)
         self.leaveAccountButton.clicked.connect(self.leave_account)
+        self.loadPageButton.clicked.connect(self.load_page)
 
     def changed_color(self): # Функция изменения цвета программы
         config_writer = open("userInformation/config", "w", encoding="utf-8")
@@ -59,18 +50,22 @@ class MainWindow(QMainWindow):
             self.backgroundFrame.setStyleSheet('''
             QFrame {
                 background-color: rgb(43, 45, 48);
+                border-radius: 10px;
             }
             QLabel, QPushButton {
                 color: rgb(225,225,225);
+                border-radius: 10px;
             }''')
             config_writer.write("dark")
         else:
             self.backgroundFrame.setStyleSheet('''
             QFrame {
                 background-color: rgb(253,217,181);
+                border-radius: 10px;
             }   
             QLabel, QPushButton {
                 color: rgb(0,0,0);
+                border-radius: 10px;
             }''')
             config_writer.write("light")
         config_writer.close()
@@ -83,21 +78,57 @@ class MainWindow(QMainWindow):
                 self.backgroundFrame.setStyleSheet('''
                             QFrame {
                                 background-color: rgb(43, 45, 48);
+                                border-radius: 10px;
                             }
                             QLabel, QPushButton{
                                 color: rgb(225,225,225);
+                                border-radius: 10px;
                             }''')
             else:
                 self.backgroundFrame.setStyleSheet('''
                             QFrame {
                                 background-color: rgb(253,217,181);
+                                border-radius: 10px;
                             }   
                             QLabel, QPushButton {
                                 color: rgb(0,0,0);
+                                border-radius: 10px;
                              }''')
+    def load_page(self):
+        # Прописываем отображение информации о счетах пользователя
+        self.connect_db()
+        sql = '''SELECT account_name, balance, currency FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        if len(response) > 1:  # Для отображения, если аккаунтов множество
+            self.nameAccTwoLabel.setVisible(True)
+            self.balanceTwoLabel.setVisible(True)
+            self.balanceOneLabel.setVisible(True)
+            self.nameAccOneLabel.setText(response[0][0])
+            self.nameAccTwoLabel.setText(response[1][0])
+
+            self.balanceOneLabel.setText(f"Баланс: {response[0][1]} {response[0][2]}")
+            self.balanceTwoLabel.setText(f"Баланс: {response[1][1]} {response[1][2]}")
+
+        elif len(response) == 1:  # Для отображения, если аккаунт один
+            self.nameAccTwoLabel.setVisible(True)
+            self.balanceTwoLabel.setVisible(True)
+            self.balanceOneLabel.setVisible(True)
+            self.nameAccOneLabel.setText(response[0][0])
+            self.balanceOneLabel.setText(f"Баланс: {response[0][1]} {response[0][2]}")
+
+            self.nameAccTwoLabel.setVisible(False)
+            self.balanceTwoLabel.setVisible(False)
+
+        else:  # Если аккаунтов нет
+            self.nameAccOneLabel.setText("У вас пока нет ни дного счёта")
+            self.nameAccTwoLabel.setVisible(False)
+            self.balanceTwoLabel.setVisible(False)
+            self.balanceOneLabel.setVisible(False)
+        self.connect.close()
 
     def create_new_account(self):
-        pass
+        self.app = CreateNewAcc(int(self.user_id[0][0]))
+        self.app.show()
 
     def check_all_accounts(self):
         self.connect_db()
@@ -136,7 +167,10 @@ class MainWindow(QMainWindow):
         self.app.show()
 
     def check_history(self):
-        self.app = CheckHistory()
+        self.connect_db()
+        sql = '''SELECT account_name FROM accounts WHERE user_id = ?'''
+        response = self.cursor.execute(sql, (int(self.user_id[0][0]),)).fetchall()
+        self.app = CheckHistory(response)
         self.app.show()
 
     def leave_account(self):
@@ -191,11 +225,21 @@ class Transfer(QWidget):
                 sql = '''SELECT balance FROM accounts WHERE account_name = ?;'''
                 on_balance = self.cursor.execute(sql, (current_account,)).fetchall()
                 if int(on_balance[0][0]) > int(transfer_summ):
+                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                    # Обновляем счёт отправителя
                     sql = '''UPDATE accounts
                              SET balance = balance - ?
                              WHERE account_name = ?;'''
                     self.cursor.execute(sql, (int(transfer_summ), current_account))
                     self.connect.commit()
+
+                    # Добавляем запись о переводе, связанную со счётом отправителя
+                    sql = '''INSERT INTO operations(account_name, date_operation, summ_operation, operation)
+                             VALUES(?, ?, ?, "-")'''
+                    self.cursor.execute(sql, (current_account, current_time, int(transfer_summ)))
+                    self.connect.commit()
+
+                    # Обновляем аккаунт получателя
                     sql = '''UPDATE accounts
                              SET balance = balance + ?
                              WHERE account_id = (
@@ -203,6 +247,19 @@ class Transfer(QWidget):
                              FROM accounts
                              WHERE user_id = (SELECT user_id FROM users WHERE phone_number = ?))'''
                     self.cursor.execute(sql, (int(transfer_summ), number))
+                    self.connect.commit()
+
+                    # Получаем имя аккаунта получателя (по умолчанию самый первый аккаунт)
+                    sql='''SELECT account_name
+                           FROM accounts
+                           WHERE user_id = (SELECT user_id FROM users WHERE phone_number = ?)
+                           LIMIT 1;'''
+                    recipient_account = self.cursor.execute(sql, (number, )).fetchall()
+
+                    # Добавляем в operation запись о получении средств, связанную со счётом получателя
+                    sql = '''INSERT INTO operations(account_name, date_operation, summ_operation, operation)
+                             VALUES(?, ?, ?, "+")'''
+                    self.cursor.execute(sql, (recipient_account[0][0], current_time, int(transfer_summ)))
                     self.connect.commit()
                     self.connect.close()
                     self.close()
@@ -308,7 +365,6 @@ class EditAccount(QWidget):
         super().__init__()
         self.response = response
         self.loadUi()
-        self.current_account = self.accountsBox.currentText()
 
     def loadUi(self):
         uic.loadUi('editAccount.ui', self)
@@ -320,19 +376,33 @@ class EditAccount(QWidget):
             self.accountsBox.addItem(value[0])
 
     def delete_account(self):
-        sql = '''DELETE from accounts WHERE account_name = ?'''
+        current_account = self.accountsBox.currentText()
         self.connect_db()
-        self.cursor.execute(sql, (self.current_account, ))
+        # Удаляем запись из таблицы счетов
+        sql = '''DELETE from accounts WHERE account_name = ?'''
+        self.cursor.execute(sql, (current_account, ))
+        self.connect.commit()
+
+        # Удаляем запись из таблицы операций
+        sql = '''DELETE FROM operations WHERE account_name = ?'''
+        self.cursor.execute(sql, (current_account, ))
         self.connect.commit()
         self.connect.close()
         self.close()
 
     def edit(self):
         new_account_name = self.nameAccountEdit.text()
+        current_account = self.accountsBox.currentText()
         if len(new_account_name) > 0:
-            sql = '''UPDATE accounts SET account_name = ? WHERE account_name = ?'''
             self.connect_db()
-            self.cursor.execute(sql, (new_account_name, self.current_account))
+            # Обновляем записи в таблице счетов
+            sql = '''UPDATE accounts SET account_name = ? WHERE account_name = ?'''
+            self.cursor.execute(sql, (new_account_name, current_account))
+            self.connect.commit()
+
+            # Обновляем записи в таблице операций
+            sql = '''UPDATE operations SET account_name = ? WHERE account_name = ?'''
+            self.cursor.execute(sql, (new_account_name, current_account))
             self.connect.commit()
             self.connect.close()
             self.close()
@@ -343,12 +413,58 @@ class EditAccount(QWidget):
 
 
 class CheckHistory(QWidget):
-    def __init__(self):
+    def __init__(self, response):
         super().__init__()
+        self.response = response
         self.loadUi()
 
     def loadUi(self):
         uic.loadUi('checkHistory.ui', self)
+
+        self.checkAccountHistoryButton.clicked.connect(self.check_history)
+
+        for value in self.response:
+            self.accountsBox.addItem(value[0])
+
+    def check_history(self):
+        self.connect = sqlite3.connect("Bank")
+        self.cursor = self.connect.cursor()
+        current_account = self.accountsBox.currentText()
+
+        sql = '''SELECT date_operation, summ_operation, operation
+                 FROM operations
+                 WHERE account_name = ?'''
+
+        history_data = self.cursor.execute(sql, (current_account, )).fetchall()
+        for value in history_data:
+            self.HistoryList.addItem(f"{value[2]}{value[1]}\n{value[0]}\n")
+        self.connect.close()
+
+
+class CreateNewAcc(QWidget):
+    def __init__(self, user_id):
+        super().__init__()
+        self.user_id = user_id
+        self.loadUi()
+
+    def loadUi(self):
+        uic.loadUi('CreateNewAcc.ui', self)
+
+        self.createNewAccButton.clicked.connect(self.create_new_account)
+
+    def create_new_account(self):
+        account_name = self.nameNewAccEdit.text()
+        if account_name and not account_name.isdigit():
+            connect = sqlite3.connect("Bank")
+            cursor = connect.cursor()
+            sql = '''INSERT INTO accounts(account_name, user_id, balance, currency)
+                     VALUES(?, ?, 0, "Руб")'''
+            cursor.execute(sql, (account_name, self.user_id))
+            connect.commit()
+            connect.close()
+            self.close()
+        else:
+            pass
 
 
 class AuthorizationWindow(QWidget): # 920x562

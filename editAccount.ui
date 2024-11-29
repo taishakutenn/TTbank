@@ -13,6 +13,12 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QPushButton{
+	border: 1px solid black;
+	border-radius: 10px;
+}</string>
+  </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
@@ -50,6 +56,10 @@
      <height>20</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">border: 1px solid black;
+border-radius: 10px;</string>
+   </property>
    <property name="text">
     <string/>
    </property>
@@ -81,6 +91,14 @@
      <height>23</height>
     </rect>
    </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">:hover {
+    background-color: rgb(204, 102, 255);
+}</string>
+   </property>
    <property name="text">
     <string>Удалить счёт</string>
    </property>
@@ -109,6 +127,14 @@
      <width>111</width>
      <height>23</height>
     </rect>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">:hover {
+    background-color: rgb(204, 102, 255);
+}</string>
    </property>
    <property name="text">
     <string>Подтвердить</string>

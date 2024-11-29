@@ -13,6 +13,12 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QPushButton{
+	border: 1px solid black;
+	border-radius: 10px;
+}</string>
+  </property>
   <widget class="QComboBox" name="accountsBox">
    <property name="geometry">
     <rect>
@@ -103,6 +109,15 @@
      <width>181</width>
      <height>23</height>
     </rect>
+   </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton:hover {
+    background-color: rgb(204, 102, 255);
+}
+</string>
    </property>
    <property name="text">
     <string>Перевести</string>
